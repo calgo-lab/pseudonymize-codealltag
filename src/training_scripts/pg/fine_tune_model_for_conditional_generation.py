@@ -71,7 +71,10 @@ def fine_tune():
     project_root: Path = ProjectUtils.get_project_root()
     data_handler = CodealltagDataHandler(project_root, data_dir=data_dir)
     datasetdict = data_handler.get_train_dev_test_datasetdict(k=data_fold_k_value)
-    fold_stats = data_handler.get_fold_stats(datasetdict)
+    
+    label_order = ['MALE', 'FAMILY', 'ORG', 'CITY', 'DATE', 'URL', 'EMAIL', 
+                   'FEMALE', 'UFID', 'PHONE', 'USER', 'STREET', 'STREETNO', 'ZIP']
+    fold_stats = data_handler.get_fold_stats(datasetdict, label_order)
     
     sample_size = (
         len(datasetdict["train"]) + 
