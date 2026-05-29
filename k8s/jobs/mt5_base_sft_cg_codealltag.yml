@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mt5-base-sft-cg-codealltag
+  namespace: ssaha
+spec:
+  ttlSecondsAfterFinished: 60
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: mt5-base-sft-cg-codealltag
+    spec:
+      containers:
+        - name: mt5-base-sft-cg-codealltag-container
+          image: sksdotsauravs/python-nlp-dev-container:ubuntu24.04-python3.12.11-cuda12.8.1-torch2.7.1-r20260408
+          workingDir: /home/ssaha
+          resources:
+            requests:
+              nvidia.com/gpu: "1"
+              memory: "32Gi"
+              cpu: "8000m"
+            limits:
+              nvidia.com/gpu: "1"
+              memory: "64Gi"
+              cpu: "16000m"
+          volumeMounts:
+            - name: ssaha-pv
+              mountPath: /home/ssaha
+          env:
+            - name: RUN_PYTHON_SCRIPT
+              value: "yes"
+            - name: PYTHON_SCRIPT_PATH
+              value: "/home/ssaha/Projects/pseudonymize-codealltag/src/training_scripts/pg/fine_tune_model_for_conditional_generation.py"
+            - name: FLAIR_CACHE_ROOT
+              value: /home/ssaha/.flair
+            - name: HF_HOME
+              value: /home/ssaha/.cache/huggingface
+            - name: MODEL_CHECKPOINTS_ROOT_DIR
+              value: /home/ssaha/model-checkpoints
+            - name: DATA_FOLD_K_VALUE
+              value: "1"
+            - name: USE_MULTI_GPU
+              value: "0"
+            - name: LOG_TO_WANDB
+              value: "1"
+            - name: WANDB_ENTITY
+              value: calgo-lab
+            - name: TRANSFORMER_MODEL_NAME
+              value: google/mt5-base
+            - name: LEARNING_RATE
+              value: "5e-5"
+            - name: MAX_EPOCHS
+              value: "10"
+            - name: MINI_BATCH_SIZE
+              value: "1"
+            - name: WANDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wandb-secret-sksdotsauravs
+                  key: wandb_api_key
+      restartPolicy: Never
+      volumes:
+        - name: ssaha-pv
+          persistentVolumeClaim:
+            claimName: ssaha-pvc
+      nodeSelector:
+        gpu: h200
